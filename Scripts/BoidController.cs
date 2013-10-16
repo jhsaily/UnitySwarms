@@ -271,7 +271,8 @@ public class BoidController : MonoBehaviour
 	}
 	
 	private Vector3[] calculate3DSites () {
-		return null;
+		Vector3[] blah = new Vector3[4];
+		return blah;
 	}
 	
 	public Vector3 getVelocity () 
