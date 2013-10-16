@@ -40,7 +40,7 @@ public class BoidController : MonoBehaviour
 		for ( int i = 0; i < parent.crystalSites; i++ ) 
 		{
 			Vector3 rotationPos = new Vector3( parent.crystalDistance, 0f, 0f );
-			rotationPos = RotateY( rotationPos, theta );
+			rotationPos = rotateY( rotationPos, theta );
 			crystalSites[i] = this.transform.position + rotationPos;
 			theta += parent.crystalAngleRad * ( Mathf.PI/180 );
 		}
@@ -57,7 +57,7 @@ public class BoidController : MonoBehaviour
 		for ( int i = 0; i < parent.crystalSites; i++ )
 		{
 			Vector3 rotationPos = new Vector3( parent.crystalDistance, 0f, 0f );
-			rotationPos = RotateY( rotationPos, theta );
+			rotationPos = rotateY( rotationPos, theta );
 			crystalSites[i] = this.transform.position + rotationPos;
 			theta += parent.crystalAngleRad * ( Mathf.PI/180 );
 		}
@@ -231,7 +231,7 @@ public class BoidController : MonoBehaviour
 	/*
 	 * Rotates a position vector around the x-axis by some angle
 	 */
-	private Vector3 RotateX ( Vector3 v, float angle )
+	private Vector3 rotateX ( Vector3 v, float angle )
 	{
 		float sin = Mathf.Sin( angle );
 		float cos = Mathf.Cos( angle );
@@ -245,7 +245,7 @@ public class BoidController : MonoBehaviour
 	/*
 	 * Rotates a position vector around the y-axis by some angle
 	 */
-    private Vector3 RotateY ( Vector3 v, float angle )
+    private Vector3 rotateY ( Vector3 v, float angle )
 	{
 		float sin = Mathf.Sin( angle );
 		float cos = Mathf.Cos( angle );
@@ -259,7 +259,7 @@ public class BoidController : MonoBehaviour
 	/*
 	 * Rotates a position vector around the z-axis by some angle
 	 */
-	private Vector3 RotateZ ( Vector3 v, float angle )
+	private Vector3 rotateZ ( Vector3 v, float angle )
 	{
 		float sin = Mathf.Sin( angle );
 		float cos = Mathf.Cos( angle );
@@ -268,6 +268,10 @@ public class BoidController : MonoBehaviour
 		v.x = ( cos * tx ) - ( sin * ty );
 		v.y = ( cos * ty ) + ( sin * tx );
 		return v;
+	}
+	
+	private Vector3[] calculate3DSites () {
+		return null;
 	}
 	
 	public Vector3 getVelocity () 
