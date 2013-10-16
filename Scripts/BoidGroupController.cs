@@ -15,7 +15,7 @@ public class BoidGroupController : MonoBehaviour
 	public float wallBounceSpeed = 0.5f;
 	public int xMin = 0, xMax = 100, yMin = 0, yMax = 100, zMin = 0, zMax = 100;
 	public bool Grid2D = false;
-	private bool test = true;
+	private bool test = false;
 	
 	void Start ()
 	{	
