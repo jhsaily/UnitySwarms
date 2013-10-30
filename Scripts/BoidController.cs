@@ -14,59 +14,48 @@ public class BoidController : MonoBehaviour
     private Vector3 v5;                      // Velocity vector for boid rule 5
     private Vector3 v6;                      // Velocity vector for boid rule 6
     private Vector3[] crystalSites;          // Position vectors of all crystal sites around boid
+    private static Vector3[] calculatedSites;
+    private static bool calculated = false;
     
     void Start () 
     {
         parent = transform.parent.GetComponent<BoidGroupController>();
-        velocity = new Vector3( Random.Range( -1.0f, 1.0f ), 0.0f, Random.Range( -1.0f, 1.0f ) );
+        velocity = new Vector3( Random.Range( -1.0f, 1.0f ), Random.Range( -1.0f, 1.0f ), Random.Range( -1.0f, 1.0f ) );
 
         /*
          * Declares whether or not boid should be locked to a 2D space
          */
+        crystalSites = new Vector3[parent.crystalSites];
         if ( parent.Grid2D ) 
         {
             transform.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePositionY 
                                                             | RigidbodyConstraints.FreezeRotationX 
                                                             | RigidbodyConstraints.FreezeRotationZ 
                                                             | RigidbodyConstraints.FreezeRotationY;
+            if (calculated == false) {
+                calculatedSites = calculate2DSites();
+                calculated = true;
+            }
         }
-        
-        crystalSites = new Vector3[parent.crystalSites];
-        float theta = 0;
-        
-        /*
-         * Calculate initial positions of crystal sites
-         */
-        for ( int i = 0; i < parent.crystalSites; i++ ) 
+        else
         {
-            Vector3 rotationPos = new Vector3( parent.crystalDistance, 0f, 0f );
-            rotationPos = rotateY( rotationPos, theta );
-            crystalSites[i] = this.transform.position + rotationPos;
-            theta += parent.crystalAngleRad * ( Mathf.PI/180 );
+            if (calculated == false) {
+                calculatedSites = calculate3DSites();
+                calculated = true;
+            }
         }
     }
     
     // Update is called once per frame
     void Update ()
     {
-        float theta = 0;
-        
-        /*
-         * Recalculate positions of crystal sites
-         */
         for ( int i = 0; i < parent.crystalSites; i++ )
         {
-            Vector3 rotationPos = new Vector3( parent.crystalDistance, 0f, 0f );
-            rotationPos = rotateY( rotationPos, theta );
-            crystalSites[i] = this.transform.position + rotationPos;
-            theta += parent.crystalAngleRad * ( Mathf.PI/180 );
+            crystalSites[i] = this.transform.position + calculatedSites[i];
         }
         Move ();
     }
-    
-    /*
-     * Moves the boids based on an another rule function
-     */
+
     public void Move ()
     {
         v4 = boidRuleFour();
@@ -269,11 +258,65 @@ public class BoidController : MonoBehaviour
         v.y = ( cos * ty ) + ( sin * tx );
         return v;
     }
-    
+
+    private Vector3[] calculate2DSites ()
+    {
+        int siteNo = parent.crystalSites;
+        Vector3[] siteCoords = new Vector3[siteNo];
+        float theta = 0;
+
+        for ( int i = 0; i < siteNo; i++ )
+        {
+            Vector3 rotationPos = new Vector3( parent.crystalDistance, 0f, 0f );
+            rotationPos = rotateY( rotationPos, theta );
+            siteCoords[i] = rotationPos;
+            theta += parent.crystalAngleRad * ( Mathf.PI/180 );
+        }
+
+        return siteCoords;
+    }
+
     private Vector3[] calculate3DSites ()
     {
-        Vector3[] blah = new Vector3[4];
-        return blah;
+        int siteNo = parent.crystalSites;
+        Vector3[] siteCoords = new Vector3[siteNo];
+        // Actual algorithm begins here
+        float p = 1/2;
+        float a = 1 - 2 * p / (siteNo - 3);
+        float b = p*(siteNo + 1) / (siteNo - 3);
+        float r = 0;
+        float theta = Mathf.PI;
+        float phi = 0f;
+        for(int i = 1; i <= siteNo; i++)
+        {
+            if (i > 1 && i < siteNo)
+            {
+                float kPrime = a * i + b;
+                float h = -1 + 2*(kPrime - 1) / (siteNo - 1);
+
+                theta = Mathf.Acos(h);
+                float temp = r;
+                r = Mathf.Sqrt(1 - (h*h));
+                double phitemp = (phi + 3.6/Mathf.Sqrt(siteNo)*2/(temp + r)) % (2 * Mathf.PI);
+                phi = (float) phitemp;
+            }
+            else if(i == siteNo)
+            {
+                theta = 0f;
+                phi = 0f;
+            }
+
+
+            siteCoords[i - 1].x = Mathf.Sin(theta) * Mathf.Cos(phi);
+            siteCoords[i - 1].y = Mathf.Sin(theta) * Mathf.Sin(phi);
+            siteCoords[i - 1].z = Mathf.Cos(theta);
+
+            siteCoords[i - 1] = siteCoords[i - 1] * parent.crystalDistance;
+            print (siteCoords[i - 1].x + ", " + siteCoords[i - 1].y + ", " + siteCoords[i - 1].z);
+        }
+        // Actual algorithm ends here
+
+        return siteCoords;
     }
     
     public Vector3 getVelocity () 
