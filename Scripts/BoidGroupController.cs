@@ -5,17 +5,18 @@ public class BoidGroupController : MonoBehaviour
 {
     
     public GameObject boidPrefab;
-    public int boidCount = 10;
-    public float minDistance = 5.0f;
-    public float maxSubGroupDistance = 25.0f;
-    public float alignmentWeight = 2, cohesionWeight = 1, interGroupSeparationWeight = 1, intraGroupSeparationWeight = 1, crystalFormationWeight = 1;
-    public int crystalSites = 2;
-    public float crystalDistance = 5;
-    public float crystalSiteWeight = 1;
-    public float maxSpeed = 4.0f;
-    public float wallBounceSpeed = 0.5f;
+    public int boidCount = 100;
+    public float minDistance = 2.5f;
+    public float maxSubGroupDistance = 15f;
+    public float alignmentWeight = 4, cohesionWeight = 0.25f, interGroupSeparationWeight = 1, intraGroupSeparationWeight = 1, crystalFormationWeight = 0.4f, crystalSiteWeight = 0.25f;
+    public int crystalSites = 4;
+    public float crystalDistance = 10;
+    public float maxSpeed = 2.5f;
+    public float wallBounceSpeed = 1.5f;
     public int xMin = 0, xMax = 100, yMin = 0, yMax = 100, zMin = 0, zMax = 100;
     public bool Grid2D = false;
+    public bool siteLines = false;
+    public bool boidLines = false;
     
     void Start ()
     {    

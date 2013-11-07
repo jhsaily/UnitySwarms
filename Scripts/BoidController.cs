@@ -14,12 +14,13 @@ public class BoidController : MonoBehaviour
     private Vector3 v5;                      // Velocity vector for boid rule 5
     private Vector3 v6;                      // Velocity vector for boid rule 6
     private Vector3[] crystalSites;          // Position vectors of all crystal sites around boid
-    public bool[] siteLock;
+    private bool[] siteLock;
     private Vector3 nearestSite;
     private BoidController nSParent;
     private int index = 0;
     private static Vector3[] calculatedSites;
     private static bool calculated = false;
+    private static int count = 0;
     private GameObject[] boid;
     private float crystalAngleRad = 0;
     private BoidController nearestBoid;
@@ -33,8 +34,6 @@ public class BoidController : MonoBehaviour
          * Declares whether or not boid should be locked to a 2D space
          */
         crystalAngleRad = 360 / parent.crystalSites;
-        crystalSites = new Vector3[parent.crystalSites];
-        siteLock = new bool[parent.crystalSites];
         nearestSite = this.transform.position;
         nearestBoid = this;
         if ( parent.Grid2D ) 
@@ -55,20 +54,31 @@ public class BoidController : MonoBehaviour
                 calculated = true;
             }
         }/*
-        boid = new GameObject[parent.crystalSites];
-        for ( int i = 0; i < parent.crystalSites; i++ ) {
+        boid = new GameObject[count];
+        for ( int i = 0; i < count; i++ ) {
             boid[i] = (GameObject) Instantiate( boidPrefab, new Vector3(), new Quaternion() );
         }*/
+
+        crystalSites = new Vector3[count];
+        siteLock = new bool[count];
     }
     
     // Update is called once per frame
     void Update ()
     {
         Move ();
-        for ( int i = 0; i < parent.crystalSites; i++ )
+        for ( int i = 0; i < count; i++ )
         {
             crystalSites[i] = this.transform.position + calculatedSites[i];
             //boid[i].transform.position = crystalSites[i];
+        }
+        if (parent.siteLines)
+        {
+            Debug.DrawLine(this.transform.position, nearestSite, Color.green, 0, true);
+        }
+        if (parent.boidLines)
+        {
+            Debug.DrawLine(this.transform.position, nSParent.transform.position, Color.magenta, 0, true);
         }
     }
 
@@ -131,7 +141,8 @@ public class BoidController : MonoBehaviour
                     if ( ( Vector3.Distance( nearestBoid.transform.position, this.transform.position ) >
                         Vector3.Distance( boid.transform.position, this.transform.position ) ||
                         nearestBoid == this ) &&
-                        boid != this)
+                        boid != this &&
+                        boid.hasFreeSites())
                     {
                         nearestBoid = boid;
                     }
@@ -159,17 +170,17 @@ public class BoidController : MonoBehaviour
         {
             Vector3[] nearestSites = nearestBoid.getCrystalSites();
             if (nSParent != null) {
-                nSParent.siteLock[index] = false;
+                nSParent.unlockSite(index);
             }
             if (nSParent == null || nSParent == this)
             {
                 nearestSite = nearestSites[0];
                 nSParent = nearestBoid;
-                for ( int i = 1; i < parent.crystalSites; i++ )
+                for ( int i = 1; i < count; i++ )
                 {
                     if ( Vector3.Distance( nearestSites[i], this.transform.position ) <
                         Vector3.Distance( nearestSite, this.transform.position ) &&
-                        nearestBoid.siteLock[i] == false)
+                        nearestBoid.isLocked(i) == false)
                     {
                         nearestSite = nearestSites[i];
                         index = i;
@@ -178,24 +189,44 @@ public class BoidController : MonoBehaviour
             }
             else
             {
-                Vector3[] temp = nSParent.getCrystalSites();
-                nearestSite = nearestSites[0];
-                for ( int i = 1; i < parent.crystalSites; i++ )
+                nearestSite = nSParent.getCrystalSites()[index];
+                bool temp = true;
+                for ( int i = 0; i < count; i++ )
                 {
-                    if ( parent.crystalSiteWeight * Vector3.Distance( nearestSites[i], this.transform.position ) <
-                        Vector3.Distance( nearestSite, this.transform.position ) &&
-                        nearestBoid.siteLock[i] == false)
+                    if (temp)
                     {
-                        nearestSite = nearestSites[i];
-                        index = i;
-                        nSParent = nearestBoid;
+                        if ( parent.crystalSiteWeight * Vector3.Distance( nearestSites[i], this.transform.position ) <
+                        Vector3.Distance( nearestSite, this.transform.position ) &&
+                        nearestBoid.isLocked(i) == false )
+                        {
+                            temp = false;
+                            nearestSite = nearestSites[i];
+                            index = i;
+                            nSParent = nearestBoid;
+                        }
+                    }
+                    else
+                    {
+                        if ( Vector3.Distance( nearestSites[i], this.transform.position ) <
+                        Vector3.Distance( nearestSite, this.transform.position ) &&
+                        nearestBoid.isLocked(i) == false)
+                        {
+                            nearestSite = nearestSites[i];
+                            index = i;
+                            nSParent = nearestBoid;
+                        }
                     }
                 }
             }
+
             if (nSParent != null && nSParent != this) {
-                nSParent.siteLock[index] = true;
+                nSParent.lockSite(index);
             }
-            v6 = ( nearestSite - transform.position ) * Vector3.Distance( nearestSite, this.transform.position ) / parent.crystalDistance;
+
+            if (nSParent != this)
+            {
+                v6 = ( nearestSite - transform.position ) * Vector3.Distance( nearestSite, this.transform.position ) / parent.crystalDistance;
+            }
         }
         
         v6 = v6*parent.crystalFormationWeight;
@@ -307,6 +338,7 @@ public class BoidController : MonoBehaviour
     private Vector3[] calculate2DSites ()
     {
         int siteNo = parent.crystalSites;
+        count = parent.crystalSites;
         Vector3[] siteCoords = new Vector3[siteNo];
         float theta = 0;
 
@@ -324,10 +356,11 @@ public class BoidController : MonoBehaviour
     private Vector3[] calculate3DSites ()
     {
         int siteNo = parent.crystalSites;
-        Vector3[] siteCoords = new Vector3[siteNo];
+        ArrayList temp = new ArrayList();
+        Vector3[] siteCoords;
 
-        float thetaY = 0;
-        float thetaZ = 0;
+        float thetaY = 0f;
+        float thetaZ = 0f;
         float CARY = 0f;
         float CARZ = 0f;
         if (parent.crystalSites % 2 == 0)
@@ -347,16 +380,46 @@ public class BoidController : MonoBehaviour
             {
                 Vector3 rotationPos = new Vector3( parent.crystalDistance, 0f, 0f );
                 rotationPos = rotateY( rotationPos, thetaY );
-                siteCoords[i] = rotationPos;
+                bool tempBool = false;
+                for (int j = 0; j < temp.Count; j++)
+                {
+                    if ((Vector3)temp[j] == rotationPos)
+                    {
+                        tempBool = true;
+                        break;
+                    }
+                }
+                if (!tempBool)
+                {
+                    temp.Add(rotationPos);
+                }
                 thetaY += CARY * ( Mathf.PI/180 );
             }
             else
             {
                 Vector3 rotationPos = new Vector3( parent.crystalDistance, 0f, 0f );
                 rotationPos = rotateZ( rotationPos, thetaZ );
-                siteCoords[i] = rotationPos;
+                bool tempBool = false;
+                for (int j = 0; j < temp.Count; j++)
+                {
+                    if ((Vector3)temp[j] == rotationPos)
+                    {
+                        tempBool = true;
+                        break;
+                    }
+                }
+                if (!tempBool)
+                {
+                    temp.Add(rotationPos);
+                }
                 thetaZ += CARZ * ( Mathf.PI/180 );
             }
+        }
+        count = temp.Count;
+        siteCoords = new Vector3[temp.Count];
+        for (int i = 0; i < temp.Count; i++)
+        {
+            siteCoords[i] = (Vector3) temp[i];
         }
 
         // Actual algorithm begins here
@@ -432,5 +495,32 @@ public class BoidController : MonoBehaviour
     public Vector3[] getCrystalSites ()
     {
         return crystalSites;
+    }
+
+    public bool isLocked (int index)
+    {
+        return siteLock[index];
+    }
+
+    public void lockSite (int index)
+    {
+        siteLock[index] = true;
+    }
+
+    public void unlockSite (int index)
+    {
+        siteLock[index] = false;
+    }
+
+    public bool hasFreeSites()
+    {
+        bool temp = false;
+        for (int i = 0; i < count; i++) {
+            if (isLocked(i) == false) {
+                temp = true;
+                break;
+            }
+        }
+        return temp;
     }
 }
