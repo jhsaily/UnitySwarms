@@ -17,6 +17,7 @@ public class BoidGroupController : MonoBehaviour
     public bool Grid2D = false;
     public bool siteLines = false;
     public bool boidLines = false;
+    public bool sitePoints = false;
     
     void Start ()
     {    

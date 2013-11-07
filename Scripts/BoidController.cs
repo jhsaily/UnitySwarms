@@ -3,7 +3,6 @@ using System.Collections;
 
 public class BoidController : MonoBehaviour
 {
-    public GameObject boidPrefab;
     private BoidGroupController parent;      // Object that reigns over entire group
     private float averageDistance = 0.0f;    // Average distance between all sub-group members
     private int nearby = 0;                  // Number of nearby entities (determines sub group size)
@@ -21,7 +20,6 @@ public class BoidController : MonoBehaviour
     private static Vector3[] calculatedSites;
     private static bool calculated = false;
     private static int count = 0;
-    private GameObject[] boid;
     private float crystalAngleRad = 0;
     private BoidController nearestBoid;
     
@@ -53,11 +51,7 @@ public class BoidController : MonoBehaviour
                 calculatedSites = calculate3DSites();
                 calculated = true;
             }
-        }/*
-        boid = new GameObject[count];
-        for ( int i = 0; i < count; i++ ) {
-            boid[i] = (GameObject) Instantiate( boidPrefab, new Vector3(), new Quaternion() );
-        }*/
+        }
 
         crystalSites = new Vector3[count];
         siteLock = new bool[count];
@@ -67,10 +61,15 @@ public class BoidController : MonoBehaviour
     void Update ()
     {
         Move ();
+        float tempLength = 0.5f;
         for ( int i = 0; i < count; i++ )
         {
             crystalSites[i] = this.transform.position + calculatedSites[i];
-            //boid[i].transform.position = crystalSites[i];
+            if (parent.sitePoints)
+            {
+                Debug.DrawLine(crystalSites[i]+ new Vector3(-1f * tempLength, 0f * tempLength, -1f * tempLength), crystalSites[i] + new Vector3(1f * tempLength, 0f * tempLength, 1f * tempLength), Color.red, 0, true);
+                Debug.DrawLine(crystalSites[i]+ new Vector3(1f * tempLength, 0f * tempLength, -1f * tempLength), crystalSites[i] + new Vector3(-1f * tempLength, 0f * tempLength, 1f * tempLength), Color.red, 0, true);
+            }
         }
         if (parent.siteLines)
         {
