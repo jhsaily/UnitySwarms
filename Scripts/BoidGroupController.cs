@@ -8,6 +8,9 @@ public class BoidGroupController : MonoBehaviour
     public int boidCount = 100;
     public LayerMask predatorLayer;
     public LayerMask preyLayer;
+    public GameObject[] goalNodes;
+    public float goalWeight = 1.0f;
+    public float maxVisibilityAngle = 135f;
     public float predatorDistance = 20.0f;
     public float predatorSight = 10.0f;
     public float minDistance = 2.5f;
